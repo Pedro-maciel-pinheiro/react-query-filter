@@ -1,3 +1,7 @@
+import { Product } from "@/types/type-index";
 import { Index } from "@upstash/vector";
+import * as dotenv from "dotenv";
 
-export const db = new Index()
+dotenv.config();
+
+export const db = new Index<Product>();
