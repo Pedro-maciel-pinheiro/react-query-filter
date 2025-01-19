@@ -17,7 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, Filter } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { QueryResult } from "@upstash/vector";
 import { Product } from "@/types/type-index";
 import { ProductCard } from "@/components/products/product-card";
@@ -32,6 +32,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ProductState } from "@/lib/validators/product-validator";
 import { Input } from "@/components/ui/input";
+import { Slider } from "@/components/ui/slider";
+import debounce from "lodash.debounce";
+import EmptyState from "@/components/EmptyState";
 
 export default function Home() {
   const [filter, setFilter] = useState<ProductState>({
@@ -41,7 +44,7 @@ export default function Home() {
     size: ["L", "M", "S"],
   });
 
-  const { data: products } = useQuery({
+  const { data: products, refetch } = useQuery({
     queryKey: ["products"],
     queryFn: async () => {
       const { data } = await axios.post<QueryResult<Product>[]>(
@@ -49,14 +52,20 @@ export default function Home() {
         {
           filter: {
             sort: filter.sort,
+            color: filter.color,
+            price: filter.price.range,
+            size: filter.size,
           },
         },
       );
       return data;
     },
   });
-
   console.log(filter);
+  const onSubmit = () => refetch();
+
+  const debouncedSubmit = debounce(onSubmit, 400);
+  const _debouncedSubmit = useCallback(debouncedSubmit, []);
 
   const applyArrayFilter = ({
     category,
@@ -78,7 +87,12 @@ export default function Home() {
         [category]: [...prev[category], value],
       }));
     }
+
+    _debouncedSubmit();
   };
+
+  const minPrice = Math.min(filter.price.range[0], filter.price.range[1]);
+  const maxPrice = Math.max(filter.price.range[0], filter.price.range[1]);
 
   return (
     <main className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -102,6 +116,7 @@ export default function Home() {
                   })}
                   onClick={() => {
                     setFilter((prev) => ({ ...prev, sort: option.value }));
+                    _debouncedSubmit();
                   }}
                 >
                   {option.name}
@@ -208,7 +223,6 @@ export default function Home() {
                       <li key={option.label} className="flex items-center">
                         <Checkbox
                           id={`price-${optionIndex}`}
-                          
                           onCheckedChange={() => {
                             setFilter((prev) => ({
                               ...prev,
@@ -217,6 +231,7 @@ export default function Home() {
                                 range: [...option.value],
                               },
                             }));
+                            _debouncedSubmit();
                           }}
                           checked={
                             !filter.price.isCustom &&
@@ -233,6 +248,71 @@ export default function Home() {
                         </Label>
                       </li>
                     ))}
+                    <li className="flex flex-col justify-center gap-2">
+                      <div>
+                        <Checkbox
+                          id={`price-${PRICE_FILTERS.options.length}`}
+                          onCheckedChange={() => {
+                            setFilter((prev) => ({
+                              ...prev,
+                              price: {
+                                isCustom: true,
+                                range: [0, 100],
+                              },
+                            }));
+                            _debouncedSubmit();
+                          }}
+                          checked={filter.price.isCustom}
+                          className="h-4 w-4 rounded-full border-gray-300 text-indigo-600 focus:ring-indigo-500"
+                        />
+                        <Label
+                          htmlFor={`price-${PRICE_FILTERS.options.length}`}
+                          className="ml-3 text-sm text-gray-600"
+                        >
+                          Custom
+                        </Label>
+                      </div>
+                      <div className="flex justify-between">
+                        <p className="font-medium">Price</p>
+                        <div>
+                          {filter.price.isCustom
+                            ? minPrice.toFixed(0)
+                            : filter.price.range[0].toFixed(0)}{" "}
+                          $ -{" "}
+                          {filter.price.isCustom
+                            ? maxPrice.toFixed(0)
+                            : filter.price.range[1].toFixed(0)}{" "}
+                          $
+                        </div>
+                      </div>
+                      <Slider
+                        className={cn("rounded-lg border", {
+                          "opacity-50": !filter.price.isCustom,
+                          "border-black/50": filter.price.isCustom,
+                        })}
+                        disabled={!filter.price.isCustom}
+                        onValueChange={(range) => {
+                          const [newMin, newMax] = range;
+                          setFilter((prev) => ({
+                            ...prev,
+                            price: {
+                              isCustom: true,
+                              range: [newMin, newMax],
+                            },
+                          }));
+                          _debouncedSubmit();
+                        }}
+                        value={
+                          filter.price.isCustom
+                            ? filter.price.range
+                            : DEFAULT_CUSTOM_PRICE
+                        }
+                        min={DEFAULT_CUSTOM_PRICE[0]}
+                        defaultValue={DEFAULT_CUSTOM_PRICE}
+                        max={DEFAULT_CUSTOM_PRICE[1]}
+                        step={5}
+                      />
+                    </li>
                   </ul>
                 </AccordionContent>
               </AccordionItem>
@@ -240,7 +320,7 @@ export default function Home() {
           </div>
           {/* Procuct Grid*/}
           <ul className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3 lg:col-span-3">
-            {products
+            {products && products.length === 0 ? <EmptyState/> : products
               ? products.map((product) => (
                   <ProductCard key={product.id} product={product.metadata!} />
                 ))

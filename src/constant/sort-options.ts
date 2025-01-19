@@ -52,4 +52,8 @@ export const PRICE_FILTERS = {
 } as const
 
 
+export const AVG_PRODUCT_PRICE = 25
+
+export const MAX_PRODUCT_PRICE = 100
+
 export const DEFAULT_CUSTOM_PRICE = [0, 100] as [number,number];
