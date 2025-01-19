@@ -17,7 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronDown, Filter } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback,  useState } from "react";
 import { QueryResult } from "@upstash/vector";
 import { Product } from "@/types/type-index";
 import { ProductCard } from "@/components/products/product-card";
@@ -31,7 +31,6 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { ProductState } from "@/lib/validators/product-validator";
-import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import debounce from "lodash.debounce";
 import EmptyState from "@/components/EmptyState";

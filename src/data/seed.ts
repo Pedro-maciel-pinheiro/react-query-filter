@@ -16,7 +16,7 @@ const SIZES = ['S', 'M', 'L'] as const
 const seed = async () => {
   const products: Product[] = []
 
-  // 3 example products
+  
   for (let i = 0; i < 3; i++) {
     for (let j = 0; j < COLORS.length; j++) {
       for (let k = 0; k < SIZES.length; k++) {

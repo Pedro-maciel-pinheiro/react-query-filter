@@ -2,7 +2,6 @@ import { AVG_PRODUCT_PRICE, MAX_PRODUCT_PRICE } from "@/constant/sort-options";
 import { db } from "@/data";
 import { ProductFilterValidator } from "@/lib/validators/product-validator";
 import { NextRequest } from "next/server";
-import debounce from "lodash.debounce";
 
 class Filter {
   private filters: Map<string, string[]> = new Map();
